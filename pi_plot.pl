@@ -9,6 +9,7 @@ use bignum;
 use Data::Dumper;
 use Imager;
 use Imager::Fill;
+use File::Slurp "write_file";
 
 my $pi;
 my $img_x_size = 800;
@@ -29,6 +30,11 @@ my $img_3= Imager->new(
     channels => 3
     );
 my $img_4= Imager->new(
+    xsize => $img_x_size,
+    ysize => $img_y_size,
+    channels => 3
+    );
+my $img_M= Imager->new(
     xsize => $img_x_size,
     ysize => $img_y_size,
     channels => 3
@@ -65,12 +71,26 @@ my %colorrr_to_plot = (
    8=>'#00ff00',
    9=>'#00ff40',
 );
+#Mi paletta...
+my %MIO_to_plot = (
+   0=>'#faf0f0',
+   1=>'#dbb294',
+   2=>'#d09471',
+   3=>'#c14a44',
+   4=>'#633621',
+   5=>'#3e4d19',
+   6=>'#1f5c50',
+   7=>'#123629',
+   8=>'#0a1d1f',
+   9=>'#2e0f24',
+);
 my $pi = bignum::bpi($digitos_pi_max);
 $pi =~ s/\.//;
 #say $pi and die;
 my @pi_digits = split(undef,$pi);
 my @ploty = map { $chars_to_plot{$_} } @pi_digits;
 my @ploty_2 = map { $colorrr_to_plot{$_} } @pi_digits;
+my @ploty_M = map { $MIO_to_plot{$_} } @pi_digits;
 #print Dumper(@ploty) and die;
 
 my $in = 0;
@@ -89,6 +109,8 @@ my %seen_before = (
     8=>0,
     9=>0,
 );
+my $out_txt = 'pi_decimales.txt';
+my $out_write ;
 foreach my $y (0 .. 9){
     foreach my $x (0 .. 49){
         $img->box(
@@ -123,8 +145,17 @@ foreach my $y (0 .. 9){
             ymax => $y * $ystep + $ystep,
             filled => 1
             );
+        $img_M->box(
+            color=> $ploty_M[$in],
+            xmin => $x * $xstep,
+            xmay => $x * $xstep + $xstep,
+            ymin => $y * $ystep,
+            ymax => $y * $ystep + $ystep,
+            filled => 1
+            );
         #Escribi el numero papu
         my $digit_p = $pi_digits[$in];
+        $out_write .= " " . $digit_p . " ";
         my $tamagno = 11;
         $img_3->string(
             font => $ttlfont,
@@ -135,7 +166,7 @@ foreach my $y (0 .. 9){
             color => '#000000',
         );
         #Escribi el numero a no ser que ya este impreso.
-        if ($seen_before{$digit_p} == 0){
+        unless ($seen_before{$digit_p}){
             $img_4->string(
                 font => $ttlfont,
                 text => $digit_p,
@@ -149,10 +180,11 @@ foreach my $y (0 .. 9){
         $seen_before{$digit_p}++;
         $in++;
     }
-    #print "\n";
+    $out_write .=  "\n";
 }
 $img->write         ( file => 'pi.png',             type => 'png' );
 $img_colorida->write( file => 'pi_color.png',       type => 'png' );
 $img_3->write       ( file => 'pi_nros.png',        type => 'png' );
 $img_4->write       ( file => 'pi_nros_unicos.png', type => 'png' );
-#print Dumper(@seen_before);
+$img_M->write       ( file => 'pi_M.png',           type => 'png' );
+write_file($out_txt, $out_write);
